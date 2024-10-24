@@ -1,3 +1,41 @@
+## Denouement?
+
+(You might want to start in the next section.)
+
+Take out the garbage before checking for leaks.
+I noticed that ObservableTracker is implemented with WeakReferences,
+which means maybe it's not reasonable to assert that it's empty
+until a GC has run?
+
+In any case, I think commit [60316f3](../../commit/60316f3bedb42d633b90ef4720fc50ffab2e3045) proves that
+(a) garbage collection doesn't clear out refs to subscriptions that aren't disposed
+(b) it does clear out refs to subscriptions that _are_ disposed.
+
+The native aot build hasn't errored in 100+ runs.
+
+```
+diff --git a/ConsoleAppTestSubject/Program.cs b/ConsoleAppTestSubject/Program.cs
+index 8c5e410..6195f60 100644
+--- a/ConsoleAppTestSubject/Program.cs
++++ b/ConsoleAppTestSubject/Program.cs
+@@ -14,9 +14,15 @@ class Program
+         {
+             container.AbsolutePath.Value = args[0];
+
++            // prove the gc isn't clearing out the tracker
++            GC.Collect();
++            ObservableTracker.ForEachActiveTask(x => Console.WriteLine($"{x.TrackingId}: {x.FormattedType}"));
++            // [/prove]
++
+             await Task.Delay(3_000);
+         }
+
++        GC.Collect();
+         bool any = false;
+         ObservableTracker.ForEachActiveTask(x =>
+         {
+```
+
 ## How did I get here
 
 I've been using [Cysharp/R3][0] with [AvaloniaUI][1]. 
