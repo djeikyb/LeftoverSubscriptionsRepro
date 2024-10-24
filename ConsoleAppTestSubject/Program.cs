@@ -14,9 +14,15 @@ class Program
         {
             container.AbsolutePath.Value = args[0];
 
+            // prove the gc isn't clearing out the tracker
+            GC.Collect();
+            ObservableTracker.ForEachActiveTask(x => Console.WriteLine($"{x.TrackingId}: {x.FormattedType}"));
+            // [/prove]
+
             await Task.Delay(3_000);
         }
 
+        GC.Collect();
         bool any = false;
         ObservableTracker.ForEachActiveTask(x =>
         {
